@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"read-adviser-bot/lib/e"
-	"read-adviser-bot/storage"
+	"GoodDeedDAO/lib/e"
+	"GoodDeedDAO/storage"
 )
 
 type Storage struct {
@@ -18,8 +18,6 @@ type Storage struct {
 }
 
 const defaultPerm = 0774
-
-var ErrNoSavedPages = errors.New("no saved pages")
 
 func New(basePath string) Storage {
 	return Storage{basePath: basePath}

@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"read-adviser-bot/lib/e"
-	"read-adviser-bot/storage"
+	"GoodDeedDAO/lib/e"
+	"GoodDeedDAO/storage"
 )
 
 const (
