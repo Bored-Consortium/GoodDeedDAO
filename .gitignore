@@ -13,3 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+.idea/GoodDeedDAO.iml
+.idea/workspace.xml
+data/sqlite/storage.db
+data/sqlite/storage.db

@@ -40,7 +40,7 @@ func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
 }
 
 // PickRandom picks random page from storage.
-func (s *Storage) PickRandom(ctx context.Context, userName string) (*storage.Page, error) {
+func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.Page, error) {
 	q := `SELECT url FROM pages WHERE user_name = ? ORDER BY RANDOM() LIMIT 1`
 
 	var url string
@@ -83,12 +83,33 @@ func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error
 }
 
 func (s *Storage) Init(ctx context.Context) error {
-	q := `CREATE TABLE IF NOT EXISTS pages (url TEXT, user_name TEXT)`
+	q0 := `CREATE TABLE IF NOT EXISTS USERS (id_user 	INTEGER, 
+											name 		TEXT, 
+											karma 		INTEGER, 
+											deeds 		INTEGER, 
+											validations INTEGER)`
 
-	_, err := s.db.ExecContext(ctx, q)
+	q1 := `CREATE TABLE IF NOT EXISTS DEEDS (id_deed 	 INTEGER, 
+											upvote	 	 INTEGER, 
+											downvote 	 INTEGER, 
+											is_validated INTEGER,
+											type 		 TEXT)`
+
+	q2 := `CREATE TABLE IF NOT EXISTS DEED_BY_USER (id_deed 	INTEGER, 
+													id_user 	INTEGER)`
+	_, err := s.db.ExecContext(ctx, q0)
 	if err != nil {
 		return fmt.Errorf("can't create table: %w", err)
 	}
 
+	_, err1 := s.db.ExecContext(ctx, q1)
+	if err1 != nil {
+		return fmt.Errorf("can't create table: %w", err1)
+	}
+
+	_, err2 := s.db.ExecContext(ctx, q2)
+	if err2 != nil {
+		return fmt.Errorf("can't create table: %w", err2)
+	}
 	return nil
 }

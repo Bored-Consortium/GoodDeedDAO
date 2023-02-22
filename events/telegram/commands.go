@@ -68,7 +68,7 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: can't send random", err) }()
 
-	page, err := p.storage.PickRandom(context.Background(), username)
+	page, err := p.storage.AddKarma(context.Background(), username)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
 		return err
 	}
