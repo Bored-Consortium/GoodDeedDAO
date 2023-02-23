@@ -15,5 +15,4 @@
 # vendor/
 .idea/GoodDeedDAO.iml
 .idea/workspace.xml
-data/sqlite/storage.db
-data/sqlite/storage.db
+*.db

@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	RndCmd   = "/rnd"
-	HelpCmd  = "/help"
-	StartCmd = "/start"
+	UserInfoCmd = "/userinfo"
+	HelpCmd     = "/help"
+	StartCmd    = "/start"
 )
 
 func (p *Processor) doCmd(text string, chatID int, username string) error {
@@ -27,8 +27,8 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	}
 
 	switch text {
-	case RndCmd:
-		return p.sendRandom(chatID, username)
+	case UserInfoCmd:
+		return p.sendUserInfo(chatID, username)
 	case HelpCmd:
 		return p.sendHelp(chatID)
 	case StartCmd:
@@ -41,7 +41,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: save page", err) }()
 
-	page := &storage.Page{
+	page := &storage.User{
 		URL:      pageURL,
 		UserName: username,
 	}
@@ -65,22 +65,26 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	return nil
 }
 
-func (p *Processor) sendRandom(chatID int, username string) (err error) {
+func (p *Processor) sendUserInfo(chatID int, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: can't send random", err) }()
 
-	page, err := p.storage.AddKarma(context.Background(), username)
+	user, err := p.storage.GetUserInfo(context.Background(), username)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
 		return err
 	}
 	if errors.Is(err, storage.ErrNoSavedPages) {
-		return p.tg.SendMessage(chatID, msgNoSavedPages)
+		return p.tg.SendMessage(chatID, msgUserNotFound)
 	}
 
-	if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+	text := "Karma: " + string(user.Karma) +
+		"\ndeeds: " + string(user.Deeds) +
+		"\nvalidations: " + string(user.Validations)
+
+	if err := p.tg.SendMessage(chatID, text); err != nil {
 		return err
 	}
 
-	return p.storage.Remove(context.Background(), page)
+	return nil
 }
 
 func (p *Processor) sendHelp(chatID int) error {

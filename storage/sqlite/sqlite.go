@@ -29,7 +29,7 @@ func New(path string) (*Storage, error) {
 }
 
 // Save saves page to storage.
-func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
+func (s *Storage) Save(ctx context.Context, p *storage.User) error {
 	q := `INSERT INTO pages (url, user_name) VALUES (?, ?)`
 
 	if _, err := s.db.ExecContext(ctx, q, p.URL, p.UserName); err != nil {
@@ -40,8 +40,8 @@ func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
 }
 
 // PickRandom picks random page from storage.
-func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.Page, error) {
-	q := `SELECT url FROM pages WHERE user_name = ? ORDER BY RANDOM() LIMIT 1`
+func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.User, error) {
+	q := `SELECT url FROM pages WHERE user_name = ?`
 
 	var url string
 
@@ -53,14 +53,14 @@ func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.Page,
 		return nil, fmt.Errorf("can't pick random page: %w", err)
 	}
 
-	return &storage.Page{
+	return &storage.User{
 		URL:      url,
 		UserName: userName,
 	}, nil
 }
 
 // Remove removes page from storage.
-func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
+func (s *Storage) Remove(ctx context.Context, page *storage.User) error {
 	q := `DELETE FROM pages WHERE url = ? AND user_name = ?`
 	if _, err := s.db.ExecContext(ctx, q, page.URL, page.UserName); err != nil {
 		return fmt.Errorf("can't remove page: %w", err)
@@ -70,7 +70,7 @@ func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
 }
 
 // IsExists checks if page exists in storage.
-func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error) {
+func (s *Storage) IsExists(ctx context.Context, page *storage.User) (bool, error) {
 	q := `SELECT COUNT(*) FROM pages WHERE url = ? AND user_name = ?`
 
 	var count int
@@ -84,7 +84,7 @@ func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error
 
 func (s *Storage) Init(ctx context.Context) error {
 	q0 := `CREATE TABLE IF NOT EXISTS USERS (id_user 	INTEGER, 
-											name 		TEXT, 
+											user_name	TEXT, 
 											karma 		INTEGER, 
 											deeds 		INTEGER, 
 											validations INTEGER)`
@@ -112,4 +112,26 @@ func (s *Storage) Init(ctx context.Context) error {
 		return fmt.Errorf("can't create table: %w", err2)
 	}
 	return nil
+}
+
+// GetUserInfo return user's info
+func (s *Storage) GetUserInfo(ctx context.Context, username string) (*storage.User, error) {
+	q := `SELECT karma, deeds, validations FROM USERS WHERE user_name = ?`
+
+	var k, d, v int
+
+	err := s.db.QueryRowContext(ctx, q, username).Scan(&k, &d, &v)
+	if err == sql.ErrNoRows {
+		return nil, storage.ErrNoSavedPages
+	}
+	if err != nil {
+		return nil, fmt.Errorf("can't pick user's info: %w", err)
+	}
+
+	return &storage.User{
+		UserName:    username,
+		Karma:       k,
+		Deeds:       d,
+		Validations: v,
+	}, nil
 }
