@@ -48,23 +48,15 @@ func (s *Storage) AddUser(ctx context.Context, chatID int, username string) erro
 }
 
 // AddKarma add karma to a specific user.
-func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.User, error) {
-	q := `SELECT url FROM pages WHERE user_name = ?`
+func (s *Storage) AddKarma(ctx context.Context, username string, karma int) error {
+	q1 := "UPDATE USERS SET karma = karma + ? WHERE user_name = ?"
+	_, err1 := s.db.ExecContext(ctx, q1, karma, username)
 
-	var url string
-
-	err := s.db.QueryRowContext(ctx, q, userName).Scan(&url)
-	if err == sql.ErrNoRows {
-		return nil, storage.ErrNoSavedPages
-	}
-	if err != nil {
-		return nil, fmt.Errorf("can't pick random page: %w", err)
+	if err1 != nil {
+		return fmt.Errorf("can't update karma: %w", err1)
 	}
 
-	return &storage.User{
-		URL:      url,
-		UserName: userName,
-	}, nil
+	return nil
 }
 
 // Remove removes page from storage. TODO delete this

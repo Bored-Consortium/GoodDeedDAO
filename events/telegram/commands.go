@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -17,29 +16,36 @@ const (
 	UserInfoCmd = "/userinfo"
 	HelpCmd     = "/help"
 	StartCmd    = "/start"
+	AddKarmaCmd = "/addkarma"
 )
 
 func (p *Processor) doCmd(text string, chatID int, username string) error {
 	text = strings.TrimSpace(text)
 
-	log.Printf("got new command '%s' from '%s", text, username)
+	log.Printf("got new command '%s' from '%s'", text, username)
 
-	if isAddCmd(text) {
-		return p.savePage(chatID, text, username)
-	}
+	var comm, data string
+	comm, data, _ = strings.Cut(text, " ")
 
-	switch text {
+	//if isAddCmd(text) {
+	//	return p.savePage(chatID, text, username)
+	//}
+
+	switch comm {
 	case UserInfoCmd:
 		return p.sendUserInfo(chatID, username)
 	case HelpCmd:
 		return p.sendHelp(chatID)
 	case StartCmd:
 		return p.sendHello(chatID, username)
+	case AddKarmaCmd:
+		return p.AddKarma(chatID, username, data)
 	default:
 		return p.tg.SendMessage(chatID, msgUnknownCommand)
 	}
 }
 
+// TODO remove it
 func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: save page", err) }()
 
@@ -103,12 +109,22 @@ func (p *Processor) sendHello(chatID int, username string) error {
 	return p.tg.SendMessage(chatID, msgHello)
 }
 
-func isAddCmd(text string) bool {
-	return isURL(text)
+func (p *Processor) AddKarma(chatID int, username string, data string) error {
+	karma, err := strconv.Atoi(data)
+	fmt.Printf("Tryin' to add %d karma\n", karma)
+	if err == nil {
+		return p.storage.AddKarma(context.Background(), username, karma)
+	}
+
+	return p.tg.SendMessage(chatID, "Add "+data+" karma")
 }
 
-func isURL(text string) bool {
-	u, err := url.Parse(text)
-
-	return err == nil && u.Host != ""
-}
+//func isAddCmd(text string) bool {
+//	return isURL(text)
+//}
+//
+//func isURL(text string) bool {
+//	u, err := url.Parse(text)
+//
+//	return err == nil && u.Host != ""
+//}

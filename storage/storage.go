@@ -12,7 +12,7 @@ import (
 
 type Storage interface {
 	AddUser(ctx context.Context, chatID int, username string) error
-	AddKarma(ctx context.Context, username string) (*User, error)
+	AddKarma(ctx context.Context, username string, karma int) error
 	Remove(ctx context.Context, p *User) error
 	IsUserInDb(ctx context.Context, username string) (bool, error)
 	GetUserInfo(ctx context.Context, userName string) (*User, error)
