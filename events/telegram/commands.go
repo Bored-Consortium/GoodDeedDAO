@@ -3,8 +3,10 @@ package telegram
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"GoodDeedDAO/lib/e"
@@ -32,7 +34,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	case HelpCmd:
 		return p.sendHelp(chatID)
 	case StartCmd:
-		return p.sendHello(chatID)
+		return p.sendHello(chatID, username)
 	default:
 		return p.tg.SendMessage(chatID, msgUnknownCommand)
 	}
@@ -41,32 +43,32 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: save page", err) }()
 
-	page := &storage.User{
-		URL:      pageURL,
-		UserName: username,
-	}
+	//page := &storage.User{
+	//	URL:      pageURL,
+	//	UserName: username,
+	//}
 
-	isExists, err := p.storage.IsExists(context.Background(), page)
-	if err != nil {
-		return err
-	}
-	if isExists {
-		return p.tg.SendMessage(chatID, msgAlreadyExists)
-	}
-
-	if err := p.storage.Save(context.Background(), page); err != nil {
-		return err
-	}
-
-	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
-		return err
-	}
+	//isExists, err := p.storage.IsExists(context.Background(), page)
+	//if err != nil {
+	//	return err
+	//}
+	//if isExists {
+	//	return p.tg.SendMessage(chatID, msgAlreadyExists)
+	//}
+	//
+	//if err := p.storage.Save(context.Background(), page); err != nil {
+	//	return err
+	//}
+	//
+	//if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
 
 func (p *Processor) sendUserInfo(chatID int, username string) (err error) {
-	defer func() { err = e.WrapIfErr("can't do command: can't send random", err) }()
+	defer func() { err = e.WrapIfErr("can't do command: sendUserInfo", err) }()
 
 	user, err := p.storage.GetUserInfo(context.Background(), username)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
@@ -76,9 +78,10 @@ func (p *Processor) sendUserInfo(chatID int, username string) (err error) {
 		return p.tg.SendMessage(chatID, msgUserNotFound)
 	}
 
-	text := "Karma: " + string(user.Karma) +
-		"\ndeeds: " + string(user.Deeds) +
-		"\nvalidations: " + string(user.Validations)
+	text := "User: " + user.UserName +
+		"\nKarma: " + strconv.Itoa(user.Karma) +
+		"\ndeeds: " + strconv.Itoa(user.Deeds) +
+		"\nvalidations: " + strconv.Itoa(user.Validations)
 
 	if err := p.tg.SendMessage(chatID, text); err != nil {
 		return err
@@ -91,7 +94,12 @@ func (p *Processor) sendHelp(chatID int) error {
 	return p.tg.SendMessage(chatID, msgHelp)
 }
 
-func (p *Processor) sendHello(chatID int) error {
+func (p *Processor) sendHello(chatID int, username string) error {
+	err := p.storage.AddUser(context.Background(), chatID, username)
+	if err != nil {
+		fmt.Errorf("can't add user: %s", username)
+	}
+	// fmt.Printf("user %s added", username)
 	return p.tg.SendMessage(chatID, msgHello)
 }
 

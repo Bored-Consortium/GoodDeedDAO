@@ -28,18 +28,26 @@ func New(path string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-// Save saves page to storage.
-func (s *Storage) Save(ctx context.Context, p *storage.User) error {
-	q := `INSERT INTO pages (url, user_name) VALUES (?, ?)`
+// AddUser add new user to db.
+func (s *Storage) AddUser(ctx context.Context, chatID int, username string) error {
+	isUserInDb, _ := s.IsUserInDb(ctx, username)
+	if isUserInDb {
+		//fmt.Printf("User %s is already in db", username)
+		return nil
+	}
 
-	if _, err := s.db.ExecContext(ctx, q, p.URL, p.UserName); err != nil {
-		return fmt.Errorf("can't save page: %w", err)
+	q := `INSERT INTO USERS(id_user, user_name, karma, deeds, validations) VALUES (?, ?, ?, ?, ?)`
+
+	if _, err := s.db.ExecContext(ctx, q, chatID, username, 10, 0, 0); err != nil {
+		return fmt.Errorf("can't add user: %w", err)
+	} else {
+		fmt.Printf("user %s successfully added", username)
 	}
 
 	return nil
 }
 
-// PickRandom picks random page from storage.
+// AddKarma add karma to a specific user.
 func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.User, error) {
 	q := `SELECT url FROM pages WHERE user_name = ?`
 
@@ -59,7 +67,7 @@ func (s *Storage) AddKarma(ctx context.Context, userName string) (*storage.User,
 	}, nil
 }
 
-// Remove removes page from storage.
+// Remove removes page from storage. TODO delete this
 func (s *Storage) Remove(ctx context.Context, page *storage.User) error {
 	q := `DELETE FROM pages WHERE url = ? AND user_name = ?`
 	if _, err := s.db.ExecContext(ctx, q, page.URL, page.UserName); err != nil {
@@ -69,15 +77,15 @@ func (s *Storage) Remove(ctx context.Context, page *storage.User) error {
 	return nil
 }
 
-// IsExists checks if page exists in storage.
-func (s *Storage) IsExists(ctx context.Context, page *storage.User) (bool, error) {
-	q := `SELECT COUNT(*) FROM pages WHERE url = ? AND user_name = ?`
+// IsUserInDb checks if user is already in storage.
+func (s *Storage) IsUserInDb(ctx context.Context, username string) (bool, error) {
+	q := `SELECT COUNT(*) FROM USERS WHERE user_name = ?`
 
 	var count int
-
-	if err := s.db.QueryRowContext(ctx, q, page.URL, page.UserName).Scan(&count); err != nil {
-		return false, fmt.Errorf("can't check if page exists: %w", err)
+	if err := s.db.QueryRowContext(ctx, q, username).Scan(&count); err != nil {
+		return false, fmt.Errorf("can't check if user exists: %w", err)
 	}
+	fmt.Printf("user exists, count = %d", count)
 
 	return count > 0, nil
 }

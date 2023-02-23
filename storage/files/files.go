@@ -23,7 +23,7 @@ func New(basePath string) Storage {
 	return Storage{basePath: basePath}
 }
 
-func (s Storage) Save(page *storage.Page) (err error) {
+func (s Storage) Save(page *storage.User) (err error) {
 	defer func() { err = e.WrapIfErr("can't save page", err) }()
 
 	fPath := filepath.Join(s.basePath, page.UserName)
@@ -52,7 +52,7 @@ func (s Storage) Save(page *storage.Page) (err error) {
 	return nil
 }
 
-func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
+func (s Storage) PickRandom(userName string) (page *storage.User, err error) {
 	defer func() { err = e.WrapIfErr("can't pick random page", err) }()
 
 	path := filepath.Join(s.basePath, userName)
@@ -77,7 +77,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 	return s.decodePage(filepath.Join(path, file.Name()))
 }
 
-func (s Storage) Remove(p *storage.Page) error {
+func (s Storage) Remove(p *storage.User) error {
 	fileName, err := fileName(p)
 	if err != nil {
 		return e.Wrap("can't remove file", err)
@@ -94,7 +94,7 @@ func (s Storage) Remove(p *storage.Page) error {
 	return nil
 }
 
-func (s Storage) IsExists(p *storage.Page) (bool, error) {
+func (s Storage) IsUserInDb(p *storage.User) (bool, error) {
 	fileName, err := fileName(p)
 	if err != nil {
 		return false, e.Wrap("can't check if file exists", err)
@@ -114,14 +114,14 @@ func (s Storage) IsExists(p *storage.Page) (bool, error) {
 	return true, nil
 }
 
-func (s Storage) decodePage(filePath string) (*storage.Page, error) {
+func (s Storage) decodePage(filePath string) (*storage.User, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, e.Wrap("can't decode page", err)
 	}
 	defer func() { _ = f.Close() }()
 
-	var p storage.Page
+	var p storage.User
 
 	if err := gob.NewDecoder(f).Decode(&p); err != nil {
 		return nil, e.Wrap("can't decode page", err)
@@ -130,6 +130,6 @@ func (s Storage) decodePage(filePath string) (*storage.Page, error) {
 	return &p, nil
 }
 
-func fileName(p *storage.Page) (string, error) {
+func fileName(p *storage.User) (string, error) {
 	return p.Hash()
 }
